@@ -1,0 +1,177 @@
+
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>KPSimple</title>
+
+<script src="jquery.min.js" type="text/javascript">;</script>
+<script type="text/javascript"> var pathToDwrServlet = 'http://sofia2.com/sib/dwr';</script>
+<script type='text/javascript' src='http://sofia2.com/sib/dwr/engine.js'></script>
+<script type='text/javascript' src='http://sofia2.com/sib/dwr/util.js'></script>
+<script type='text/javascript' src='http://sofia2.com/sib/dwr/interface/GatewayDWR.js'></script>
+<script type='text/javascript' src="sofia2-api-js_v2.9.0.js">;</script>
+
+<!--script type='text/javascript' src="XXTEA.js">;</script-->
+<!--script type='text/javascript' src="base64.js">;</script-->
+<!--script type='text/javascript' src="dygraph-combined.js">;</script-->
+
+<script type="text/javascript">
+
+
+var sessionKey;
+var date = new Date();
+var idsuscripcion;
+   
+$(function(){
+	 dwr.engine.setActiveReverseAjax(true);
+	 dwr.engine.setErrorHandler(errorHandler);
+	 dwr.engine.setTimeout(0);
+});
+
+function errorHandler(message, ex){   
+	log( "ERROR:" + ex.message );
+}
+
+function log( texto ) {
+	var textArea = document.getElementById( "textArea" );
+	var split = textArea.value.split( "\n" );
+	while( split.length >= 10 ) {
+		split.shift();
+	}
+	textArea.value = "";
+	for ( var ii = 0; ii < split.length; ++ii ) {
+		textArea.value += split[ ii ] + "\n";
+	}
+
+	textArea.value += texto;
+}
+
+function clearLog( texto ) {
+	var textArea = document.getElementById( "textArea" );
+	textArea.value = "";
+}
+
+function sendCustomMessage() {
+	if ( sessionKey != null ) {
+		var message = "{ 'Sensor': { 'geometry': { 'coordinates': [ 40.512967, -3.67495 ], 'type': 'Point' }, 'assetId': 'S_Temperatura_00066', 'measure': "+inputMessage.value+", 'timestamp': { '$date': '2014-04-29T08:24:54.005Z' }  } }";
+		sofia2.insert( message, sibOntology.value, function( mensajeSSAP ) {
+			if ( mensajeSSAP != null && mensajeSSAP.body.data != null && mensajeSSAP.body.ok == true ) {
+				log( "Mensaje enviado ok" );
+			}
+			else {
+				alert( "Error: " + mensajeSSAP.body.error );
+			}
+		} );
+	}
+}
+
+/* Funciones del SIB */
+function conectarSIBConToken() {
+	pathToDwrServlet = sibAddress.value;
+	var token = document.getElementById( "sibToken" );
+	var kp = document.getElementById( "sibKp" );
+	var ontology = document.getElementById( "sibOntology" );
+	var instance = document.getElementById( "sibInstance" );
+
+	pathToDwrServlet = sibAddress.value;
+	var token = document.getElementById( "sibToken" );
+	var kp = document.getElementById( "sibKp" );
+	var ontology = document.getElementById( "sibOntology" );
+	var instance = document.getElementById( "sibInstance" );
+	sofia2.joinToken( token.value, kp.value + ":" + instance.value, function( mensajeSSAP ) {
+		if ( mensajeSSAP != null && mensajeSSAP.body.data != null && mensajeSSAP.body.ok == true ) {
+			sessionKey = mensajeSSAP.sessionKey;
+			log( "session:" + sessionKey );
+		}
+		else {
+			alert( "Error conectando del sib" );
+		}
+	} );
+	
+	
+}
+
+function desconectarSIB() {
+  sofia2.leave( function( mensajeSSAP ) {
+		 if ( mensajeSSAP != null && mensajeSSAP.body.data != null && mensajeSSAP.body.ok == true ) {
+				log( "Desconectado del sib" );
+				sessionKey = null;
+		 }
+		 else {
+			  alert( "Error desconectando del sib" );
+		 }
+	});
+}
+
+function suscribirSIB(){
+	var ontology = document.getElementById( "sibOntology" );
+	sofia2.subscribe("", ontology.value,  3000, function( idsuscripcion ){
+		this.idsuscripcion = idsuscripcion;
+		log( "suscripcion ok" );
+	});
+}
+
+function indicationForSubscription( ssapMessageJson ) {
+	log( ssapMessageJson );
+}
+
+function desuscribirSIB() { 
+	sofia2.unsubscribe( idsuscripcion, 
+		function( mensajeSSAP ){
+				if(mensajeSSAP != null && mensajeSSAP.body.data != null && mensajeSSAP.body.ok == true){
+					log( "Desuscrito del SIB " );
+				}
+				else {
+					log( "Error desuscribiendo " );					
+				}
+		},
+		function(error){
+			log( "Error desuscribiendo " );							
+		});
+}
+
+
+</script>
+
+</head>
+<body>
+<!-- div principal no selectable -->
+
+<div>
+	SIB address<input id="sibAddress" size="35" value='http://sofia2.com/sib/dwr'/>
+</div>
+<div>
+	token <input id="sibToken" size="35" value="e5e8a005d0a248f1ad2cd60a821e6838"/>
+</div>
+<div>
+	ontologia <input id="sibOntology" size="35" value="TestSensorTemperatura"/>
+</div>
+<div>
+	kp <input id="sibKp" size="35" value="KPTestTemperatura"/>
+</div>
+<div>
+	instance <input id="sibInstance" size="35" value="KPTestTemperatura01"/>
+</div>
+<div>
+	<button id="myButton" onclick="conectarSIBConToken();">Conectar SIB</button>
+	<button id="myButton" onclick="desconectarSIB();">Desconectar SIB</button>
+</div>
+<div>
+	<button id="myButton" onclick="suscribirSIB();">Suscribir SIB</button>
+	<button id="myButton" onclick="desuscribirSIB();">Desuscribir SIB</button>
+</div>
+<div>
+	Measure<input id="inputMessage" size="25" value="15"/>
+</div>
+
+<div>
+	<button id="buttonReset" onclick="sendCustomMessage();">send message</button>
+	<button id="myButton" onclick="clearLog();">Clear</button>
+</div>
+<div>
+<textarea id="textArea" rows="10" cols="52">Hola KPSimple</textarea>
+</div>
+</body>
+</html>

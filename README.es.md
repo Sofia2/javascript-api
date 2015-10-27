@@ -20,7 +20,7 @@ documentación de desarrollo de Sofia2, que puede descargarse desde http://sofia
 Para utilizar el API, deberá incluir los ficheros
 `base64.js`, `kpcore.js`, `XXTEA.js` y `sofia2-api-js-latest.js` en el directorio de recursos estáticos de su aplicación web.
 
-El directorio [examples](examples) contiene varios ejemplos de uso del API Java.
+El directorio [examples](examples) contiene varios ejemplos de uso del API.
 
 ## Información de contacto
 
